@@ -20,8 +20,18 @@ int main(int argc, char* argv[])
 			cerr << "[ERROR]: Error creating block #" << i << endl;
 			return 2;
 		}
+		out << "0";
 		out.close();
 	}
+
+	ofstream out("CONFIG",ios::out);
+	if(!out.is_open()) {
+		cerr << "[ERROR]: Error creating Configuration File" << endl;
+		return 3;
+	}
+
+	out << "prefix " << path << endl;
+	out << "numblocks" << num_blocks << endl;
 
 	return 0;
 }
