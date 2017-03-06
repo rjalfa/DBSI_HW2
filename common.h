@@ -35,12 +35,13 @@ int generate_random_int(int l, int r);
 class Block {
 	protected:
 		BLOCK_TYPE type;
-		int next_block_idx = -1;
+		int next_block_idx;
 		unsigned int blocking_factor;
 	public:
+		Block() : type(RECORD_BLOCK), next_block_idx(-1), blocking_factor(0) { };
 		BLOCK_TYPE get_block_type() { return this->type; }
 		int get_next_block_idx() { return this->next_block_idx; }
-		void set_next_block_idx(decltype(next_block_idx) nbi) { next_block_idx = nbi; }
+		void set_next_block_idx(int nbi) { next_block_idx = nbi; }
 		virtual void serialize(const string& filename) = 0;
 		virtual void load(const string& filename) = 0;
 		virtual ~Block() {};
@@ -132,7 +133,7 @@ class Disk
 		//Read and Write Blocks
 		void write_block(Block* block_ptr, unsigned int block_idx) {
 			if(!valid_block_index(block_idx)) {
-				cerr << "[ENDL] Block Index invalid" << endl;
+				cerr << "[ERROR] Block Index invalid" << endl;
 				return;
 			}
 			block_ptr->serialize(get_block_file(block_idx));

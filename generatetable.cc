@@ -4,14 +4,18 @@ unsigned int generate_table(unsigned int num_records, Disk& diskInstance)
 {
 	unsigned int counter = 0;
 	int first_block_idx = -1;
+	int new_block_idx = -1;
+	int prev_block_idx = -1;
 	RecordBlock* blk = nullptr;
 	while(num_records > 0)
 	{
 		//Request a free block
-		int new_block_idx = diskInstance.get_free_block_idx();
+		new_block_idx = diskInstance.get_free_block_idx();
 		if(first_block_idx == -1) first_block_idx = new_block_idx;
 		if(blk != nullptr) {
 			blk->set_next_block_idx(new_block_idx);
+			//Write the block
+			diskInstance.write_block(static_cast<Block*>(blk), prev_block_idx);
 			delete blk;
 		}
 		blk = new RecordBlock;
@@ -32,10 +36,13 @@ unsigned int generate_table(unsigned int num_records, Disk& diskInstance)
 				break;
 			}
 		}
-		//Write the block
-		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);
+		prev_block_idx = new_block_idx;
 	}
-	if(blk != nullptr) delete blk;
+	if(blk != nullptr) {
+		//Write the block
+		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);	
+		delete blk;
+	}
 	return static_cast<unsigned int>(first_block_idx);
 }
 
