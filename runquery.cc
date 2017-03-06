@@ -3,6 +3,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <cassert>
 #include <queue>
 using namespace std;
 
@@ -60,6 +61,7 @@ class Block {
 	public:
 		BLOCK_TYPE get_block_type() { return this->type; }
 		int get_next_block_idx() { return this->next_block_idx; }
+		void set_next_block_idx(decltype(next_block_idx) nbi) { next_block_idx = nbi; }
 		virtual void serialize(const string& filename) = 0;
 		virtual void load(const string& filename) = 0;
 		virtual ~Block() {};
@@ -114,6 +116,11 @@ class RowIDBitmapBlock : public Block {
 //Implementations
 void RecordBlock::serialize(const string& filename)
 {
+	ofstream out(filename, ios::out);
+	if(!out.is_open()) { cerr << "[ERROR] Block Write Error" << endl;return; }
+	out << type << " " << next_block_idx << " " << records.size() <<  endl;
+	for(auto record : records) out << record.id << " " << record.amount << " " << record.name << endl;
+	out.close();
 }
 
 void BitmapBlock::serialize(const string& filename)
@@ -128,7 +135,18 @@ void RowIDBitmapBlock::serialize(const string& filename)
 
 void RecordBlock::load(const string& filename)
 {
-
+	ifstream in(filename, ios::in);
+	if(!in.is_open()) { cerr << "[ERROR] Block Read Error" << endl;return; }
+	
+	int temp, n;
+	in >> temp >> next_block_idx >> n;
+	assert(temp == type);
+	for(int i = 0; i < n; i ++)
+	{
+		Record r;
+		in >> r.id >> r.amount >> r.name;
+		records.push_back(r);
+	}
 }
 
 void BitmapBlock::load(const string& filename)
