@@ -80,8 +80,9 @@ class RecordBlock : public Block {
 		{
 			Block::type = RECORD_BLOCK;
 			Block::blocking_factor = RECORD_BLOCK_FACTOR;
+
 		}
-		void set_record(const Record& record, vector<Record>::size_type index);
+		bool add_record(const Record& record);
 		void serialize(const string& filename);
 		void load(const string& filename);
 };
@@ -94,7 +95,7 @@ class BitmapBlock : public Block {
 			Block::type = BITMAP_BLOCK;
 			Block::blocking_factor = BITMAP_BLOCK_FACTOR;
 		}
-		void set_bitmap(const vector<bool>& bitarray);
+		bool set_bitmap(const vector<bool>& bitarray);
 		void serialize(const string& filename);
 		void load(const string& filename);
 };
@@ -108,12 +109,27 @@ class RowIDBitmapBlock : public Block {
 			Block::blocking_factor = ROWID_BLOCK_FACTOR;
 
 		}
-		void add_rowid(const unsigned int& rowid);
+		bool add_rowid(const unsigned int& rowid);
 		void serialize(const string& filename);
 		void load(const string& filename);
 };
 
 //Implementations
+bool RecordBlock::add_record(const Record& record)
+{
+	if(records.size() == blocking_factor) return false;
+	records.push_back(record);
+	return true;
+}
+
+bool BitmapBlock::set_bitmap(const vector<bool>& p_bitmap)
+{
+	if(p_bitmap.size() != blocking_factor) return false;
+	bitmap.clear();
+	copy(p_bitmap.begin(), p_bitmap.end(), bitmap.begin());
+	return true;
+}
+
 void RecordBlock::serialize(const string& filename)
 {
 	ofstream out(filename, ios::out);
@@ -277,8 +293,39 @@ Block* Disk::read_block(unsigned int block_idx)
 	return ret;
 }
 
+void generate_table(unsigned int num_records, Disk& diskInstance)
+{
+	unsigned int counter = 0;
+	RecordBlock* blk = nullptr;
+	while(num_records > 0)
+	{
+		//Request a free block
+		int new_block_idx = diskInstance.get_free_block_idx();
+		if(blk != nullptr) blk->set_next_block_idx(new_block_idx);
+		while(true)
+		{
+			//Generate a random record
+			Record r;
+			r.id = counter ++;
+			r.amount = generate_random_int(0,2500);
+			r.name = generate_random_string(3);
+			bool added = blk->add_record(r);
+			if(added) {
+				num_records --;
+				if(num_records == 0) break;
+			}
+			else break;
+		}
+		//Write the block
+		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);
+	}
+}
+
 int main()
 {
+	//Start Disk
+	Disk diskInstance("CONFIG");
+
 	//Prompt based I/O
 	return 0;
 }
