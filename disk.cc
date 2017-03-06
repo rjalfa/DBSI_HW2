@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 	}
 
 	out << "prefix " << path << endl;
-	out << "numblocks" << num_blocks << endl;
+	out << "numblocks " << num_blocks << endl;
 
 	return 0;
 }

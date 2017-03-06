@@ -1,3 +1,3 @@
-prefix data/block
-numblocks 23000
-datablock 1
+prefix data/
+numblocks 330000
+datablock 0
