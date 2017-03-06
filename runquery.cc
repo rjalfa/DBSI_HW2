@@ -6,6 +6,12 @@
 #include <queue>
 using namespace std;
 
+constexpr int RECORD_BLOCK_FACTOR = 300;
+constexpr int BITMAP_BLOCK_FACTOR = 32000;
+constexpr int ROWID_BLOCK_FACTOR = 1000;
+
+enum BLOCK_TYPE { RECORD_BLOCK, BITMAP_BLOCK, ROWID_BITMAP_BLOCK };
+
 const int data_blocking_factor = 300;
 const string disk_prefix = "data/block";
 /*
@@ -47,24 +53,94 @@ int generate_random_int(int l, int r) {
  */
 //Different kinds of blocks
 class Block {
+	protected:
+		BLOCK_TYPE type;
+		int next_block_idx = -1;
+		unsigned int blocking_factor;
 	public:
-		int block_type;
+		BLOCK_TYPE get_block_type() { return this->type; }
+		int get_next_block_idx() { return this->next_block_idx; }
 		virtual void serialize(const string& filename) = 0;
 		virtual void load(const string& filename) = 0;
-		virtual ~Block() = 0;
+		virtual ~Block() {};
+};
+
+struct Record {
+	unsigned int id;
+	unsigned int amount;
+	string name;
 };
 
 class RecordBlock : public Block {
-
+	vector<Record> records;
+	public:
+		RecordBlock() 
+		{
+			Block::type = RECORD_BLOCK;
+			Block::blocking_factor = RECORD_BLOCK_FACTOR;
+		}
+		void set_record(const Record& record, vector<Record>::size_type index);
+		void serialize(const string& filename);
+		void load(const string& filename);
 };
 
 class BitmapBlock : public Block {
-
+	vector<bool> bitmap;
+	public:
+		BitmapBlock() 
+		{
+			Block::type = BITMAP_BLOCK;
+			Block::blocking_factor = BITMAP_BLOCK_FACTOR;
+		}
+		void set_bitmap(const vector<bool>& bitarray);
+		void serialize(const string& filename);
+		void load(const string& filename);
 };
 
 class RowIDBitmapBlock : public Block {
+	vector<unsigned int> rowids;
+	public:
+		RowIDBitmapBlock()
+		{
+			Block::type = ROWID_BITMAP_BLOCK;
+			Block::blocking_factor = ROWID_BLOCK_FACTOR;
 
+		}
+		void add_rowid(const unsigned int& rowid);
+		void serialize(const string& filename);
+		void load(const string& filename);
 };
+
+//Implementations
+void RecordBlock::serialize(const string& filename)
+{
+}
+
+void BitmapBlock::serialize(const string& filename)
+{
+	
+}
+
+void RowIDBitmapBlock::serialize(const string& filename)
+{
+	
+}
+
+void RecordBlock::load(const string& filename)
+{
+
+}
+
+void BitmapBlock::load(const string& filename)
+{
+	
+}
+
+void RowIDBitmapBlock::load(const string& filename)
+{
+	
+}
+
 
 //Disk Handler Class
 class Disk
@@ -100,12 +176,14 @@ class Disk
 		//Checks if record is a valid 
 		bool valid_block_index(int block_idx) { return  block_idx >= 0 && static_cast<unsigned int>(block_idx) < numblocks; }
 		
+		string get_block_file(int block_idx) const { return prefix + to_string(block_idx); }
+
 		//Read and Write Blocks
-		void write_block(unique_ptr<Block> block_ptr, unsigned int block_idx) {
+		void write_block(Block* block_ptr, unsigned int block_idx) {
 			if(!valid_block_index(block_idx))
-			block_ptr->serialize(prefix + to_string(block_idx));
+			block_ptr->serialize(get_block_file(block_idx));
 		}
-		unique_ptr<Block> read_block(unsigned int block_idx);
+		Block* read_block(unsigned int block_idx);
 		
 		//Get free block index, block is marked as used now
 		int get_free_block_idx() {
@@ -124,6 +202,34 @@ class Disk
 			else return false;
 		}
 };
+
+Block* Disk::read_block(unsigned int block_idx)
+{
+	//If not a valid block, return null
+	if(!valid_block_index(block_idx)) return nullptr;
+
+	//Open file
+	ifstream ifs(get_block_file(block_idx));
+	if(!ifs.is_open()) return nullptr;
+
+	int blk_type;
+	ifs >> blk_type;
+	ifs.close();
+
+	//Pointer to Block object
+	Block* ret = nullptr;
+	switch(blk_type)
+	{
+		case RECORD_BLOCK:
+			ret = new RecordBlock;break;
+		case BITMAP_BLOCK:
+			ret = new BitmapBlock;break;
+		case ROWID_BITMAP_BLOCK:
+			ret = new RowIDBitmapBlock;break;
+	}
+	ret->load(get_block_file(block_idx));
+	return ret;
+}
 
 int main()
 {
