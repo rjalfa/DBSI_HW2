@@ -125,7 +125,11 @@ void RecordBlock::serialize(const string& filename)
 
 void BitmapBlock::serialize(const string& filename)
 {
-	
+	ofstream out(filename, ios::out);
+	if(!out.is_open()) { cerr << "[ERROR] Block Write Error" << endl;return; }
+	out << type << " " << next_block_idx << " " << bitmap.size() <<  endl;
+	for(auto bit : bitmap) out << bit;
+	out.close();
 }
 
 void RowIDBitmapBlock::serialize(const string& filename)
@@ -151,7 +155,14 @@ void RecordBlock::load(const string& filename)
 
 void BitmapBlock::load(const string& filename)
 {
+	ifstream in(filename, ios::in);
+	if(!in.is_open()) { cerr << "[ERROR] Block Read Error" << endl;return; }
 	
+	int temp, n;
+	string bitmap_str;
+	in >> temp >> next_block_idx >> n;
+	in >> bitmap_str;
+	for(int i = 0; i < n; i ++) bitmap.push_back(bitmap_str[i] == '1');
 }
 
 void RowIDBitmapBlock::load(const string& filename)
