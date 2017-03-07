@@ -176,6 +176,8 @@ Block* Disk::read_block(unsigned int block_idx)
 }
 
 void Disk::write_block(Block* block_ptr, unsigned int block_idx) {
+	static int cnt = 0;
+
 	if(!valid_block_index(block_idx)) {
 		cerr << "[ERROR] Block Index invalid" << endl;
 		return;
@@ -191,6 +193,11 @@ void Disk::write_block(Block* block_ptr, unsigned int block_idx) {
 		}
 		index_vector[block_idx] = block_ptr;
 	}
+	if(cnt >= CACHE_FLUSH_GUARD_VALUE) {
+		flush_cache();
+		cnt = 0;
+	}
+	else cnt ++;
 	//block_ptr->serialize(get_block_file(block_idx));
 }
 
@@ -230,6 +237,7 @@ Disk::Disk(const string config_file_name) {
 }
 
 void RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
+	disk_ref = &diskInstance;
 	for(unsigned int i=0;i<=num_bitmaps;i++){
 		int index = diskInstance.get_free_block_idx();
 		Block* temp = static_cast<Block*>(new RowIDBitmapBlock);
@@ -366,7 +374,6 @@ long long RowId::sumQueryRecords(vector<bool> bfr){
 				add = block->get_next_block_idx();
 			}
 		}while(true);
-		cerr << "[ERROR] Fatal error!" << endl;
 	}
 	return sum;
 }
@@ -410,6 +417,21 @@ void Bitslice::constructIndex(unsigned int num_records, unsigned int datablock_s
 		index = generate_bitmap(num_records, bitmap, *(this->get_disk_ref()));
 		this->setSecondaryEntry(j, index);
 	}
+}
+
+void RowId::initialize_existing_index(Disk& diskInstance, unsigned int num_records, unsigned int rowidblock_start_idx) {
+	disk_ref = &diskInstance;
+	for(unsigned int i = 0; i <= num_records; i ++ ) setSecondaryEntry(i, rowidblock_start_idx + i);
+}
+
+void Bitarray::initialize_existing_index(Disk& diskInstance, unsigned int rowidblock_start_idx, unsigned int stride) {
+	disk_ref = &diskInstance;
+	for(unsigned int i = 0; i <= MAX_VALUE; i ++ ) setSecondaryEntry(i, rowidblock_start_idx + stride);
+}
+
+void Bitslice::initialize_existing_index(Disk& diskInstance, unsigned int rowidblock_start_idx, unsigned int stride) {
+	disk_ref = &diskInstance;
+	for(unsigned int i = 0; i <= BITSLICE_BITS; i ++ ) setSecondaryEntry(i, rowidblock_start_idx + stride);
 }
 
 void RowId::addRecordToIndex(const Record& r){
