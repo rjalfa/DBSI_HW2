@@ -15,8 +15,9 @@ using namespace std;
 constexpr int RECORD_BLOCK_FACTOR = 300;
 constexpr int BITMAP_BLOCK_FACTOR = 32000;
 constexpr int ROWID_BLOCK_FACTOR = 1000;
-constexpr unsigned int CACHE_SIZE = 2500;
+constexpr unsigned int CACHE_SIZE = 2550;
 constexpr unsigned int MAX_VALUE = 2500;
+constexpr unsigned int CACHE_FLUSH_GUARD_VALUE = 4000;
 
 enum BLOCK_TYPE { RECORD_BLOCK, BITMAP_BLOCK, ROWID_BITMAP_BLOCK };
 /*
@@ -178,6 +179,7 @@ public:
 	void insertIntoBitmap(unsigned int bitmap_index, unsigned int data);
 	long long sumQueryRecords(vector<bool> bfr);
 	void constructIndex(unsigned int num_records, unsigned int datablock_start_idx);
+	void initialize_existing_index(Disk& diskInstance, unsigned int num_records, unsigned int rowidblock_start_idx);
 };
 
 class Bitarray: public Bitmap {

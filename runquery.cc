@@ -6,7 +6,8 @@ string prefix = "";
 unsigned int datablock_start_idx = -1;
 unsigned int numrecords = 0;
 unsigned int unique_values = 2500;
-
+unsigned int rowidblock_start_idx = -1;
+//unsigned int datablock_start_idx = -1;
 
 /*
  * No Index Query
@@ -35,6 +36,7 @@ void load_configuration(const string config_file_name){
 		if(command == "prefix") prefix = value;
 		else if(command == "datablock") datablock_start_idx = static_cast<unsigned int>(stoi(value));
 		else if(command == "numrecords") numrecords = static_cast<unsigned int>(stoi(value));
+		else if(command == "rowidblock") rowidblock_start_idx = static_cast<unsigned int>(stoi(value));
 	}
 	config_file.close();
 }
@@ -54,8 +56,10 @@ int main()
 	long long sum = no_index_query(query_vector, diskInstance);
 	cout << "Final sum was: "<< sum << endl;
 
-	
-	//long long sum = row_bitmap.sumQueryRecords(query_vector);
+	RowId row_bitmap;
+	row_bitmap.initialize_existing_index(diskInstance, unique_values, rowidblock_start_idx);
+
+	sum = row_bitmap.sumQueryRecords(query_vector);
 	cout << "Final sum was: "<< sum << endl;
 
 	diskInstance.flush_cache();
