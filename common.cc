@@ -177,6 +177,17 @@ void Disk::write_block(Block* block_ptr, unsigned int block_idx) {
 		cerr << "[ERROR] Block Index invalid" << endl;
 		return;
 	}
+	if(this->index_vector.find(block_idx) != this->index_vector.end()){
+		this->index_vector[block_idx] = block_ptr;
+	}
+	else {
+		if(index_vector.size() == cache_size){
+			(*index_vector.begin()).second->serialize(get_block_file((*index_vector.begin()).first));
+			delete (*index_vector.begin()).second;
+			index_vector.erase(index_vector.begin()); 
+		}
+		index_vector[block_idx] = block_ptr;
+	}
 	//block_ptr->serialize(get_block_file(block_idx));
 }
 

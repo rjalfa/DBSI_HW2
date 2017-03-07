@@ -13,6 +13,9 @@ Record get_record(Disk& diskInstance, unsigned int i)
 	return (static_cast<RecordBlock*>(blk))->get_record(i % RECORD_BLOCK_FACTOR);
 }
 
+/*
+ * No Index Query
+ */
 long long no_index_query(vector<bool> query_vector, Disk& diskInstance){
 	long long sum = 0;
 	
