@@ -240,26 +240,26 @@ void RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsig
 }
 
 void Bitarray::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
-	for(unsigned int i=0;i<=num_bitmaps;i++){
-		unsigned int first_pointer = generate_bitmap(bitmap_size, diskInstance);
-		this->setSecondaryEntry(i, first_pointer);
-	}
+	// for(unsigned int i=0;i<=num_bitmaps;i++){
+	// 	unsigned int first_pointer = generate_bitmap(bitmap_size, diskInstance);
+	// 	this->setSecondaryEntry(i, first_pointer);
+	// }
 }
 
 void Bitslice::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
-	for(unsigned int i=0;i<=num_bitmaps;i++){
-		unsigned int first_pointer = generate_bitmap(bitmap_size, diskInstance);
-		this->setSecondaryEntry(i, first_pointer);
-	}
+	// for(unsigned int i=0;i<=num_bitmaps;i++){
+	// 	unsigned int first_pointer = generate_bitmap(bitmap_size, diskInstance);
+	// 	this->setSecondaryEntry(i, first_pointer);
+	// }
 }
 
-unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance)
+unsigned int generate_bitmap(unsigned int num_records, vector<bool>& bitmap, Disk& diskInstance)
 {
-	unsigned int counter = 0;
 	int first_block_idx = -1;
 	int new_block_idx = -1;
 	int prev_block_idx = -1;
 	BitmapBlock* blk = nullptr;
+	int i = 0;
 	while(num_records > 0)
 	{
 		//Request a free block
@@ -275,14 +275,14 @@ unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance)
 		while(true)
 		{
 			//Generate a random record
-			bool bit = false;
+			bool bit = bitmap[i];
 			bool added = blk->add_bit(bit);
 			if(added) {
+				i ++;
 				num_records --;
 				if(num_records == 0) break;
 			}
 			else {
-				counter --;
 				break;
 			}
 		}
@@ -377,6 +377,38 @@ void RowId::constructIndex(unsigned int num_records, unsigned int datablock_star
 		if(i % 10000 == 0) cerr << i << " records done!" << endl;
 		Record rc = get_record(*(this->get_disk_ref()), i, datablock_start_idx);
 		this->addRecordToIndex(rc);
+	}
+}
+
+void Bitarray::constructIndex(unsigned int num_records, unsigned int datablock_start_idx){
+	unsigned int index;
+	for(unsigned int j = 0; j < MAX_VALUE; j ++)
+	{
+		vector<bool> bitmap;
+		for(unsigned int i = 0; i < num_records; i ++)
+		{	
+			// if(i % 10000 == 0) cerr << i << " records done!" << endl;
+			Record rc = get_record(*(this->get_disk_ref()), i, datablock_start_idx);
+			bitmap.push_back(rc.amount == j);
+		}
+		index = generate_bitmap(num_records, bitmap, *(this->get_disk_ref()));
+		this->setSecondaryEntry(j, index);
+	}
+}
+
+void Bitslice::constructIndex(unsigned int num_records, unsigned int datablock_start_idx){
+	unsigned int index;
+	for(unsigned int j = 0; j < BITSLICE_BITS; j ++)
+	{
+		vector<bool> bitmap;
+		for(unsigned int i = 0; i < num_records; i ++)
+		{	
+			// if(i % 10000 == 0) cerr << i << " records done!" << endl;
+			Record rc = get_record(*(this->get_disk_ref()), i, datablock_start_idx);
+			bitmap.push_back(this->position_set(rc.amount,j));
+		}
+		index = generate_bitmap(num_records, bitmap, *(this->get_disk_ref()));
+		this->setSecondaryEntry(j, index);
 	}
 }
 
