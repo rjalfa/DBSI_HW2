@@ -2,55 +2,60 @@
 
 #define BF_SIZE 2000000
 
-string prefix = "data/block";
+string prefix = "";
+unsigned int datablock_start_idx = -1;
+unsigned int numrecords = 0;
 
-long long no_index(unsigned int starting_block, vector<bool> query_vector){
+Record get_record(Disk& diskInstance, unsigned int i)
+{
+	unsigned int addr = datablock_start_idx + i / RECORD_BLOCK_FACTOR;
+	Block* blk = diskInstance.read_block(addr);
+	return (static_cast<RecordBlock*>(blk))->get_record(i % RECORD_BLOCK_FACTOR);
+}
+
+long long no_index_query(vector<bool> query_vector, Disk& diskInstance){
 	long long sum = 0;
-	vector<Record> records;
-	RecordBlock* block = new RecordBlock();
-	do{
-		block->load(prefix + to_string(starting_block));
-		records = block->read_records();
-		for(auto record : records){
-			if(query_vector[record.id]){
-				sum += record.amount;
-			}
+	
+	for(unsigned int i = 0; i < query_vector.size(); i ++)
+	{
+		if(query_vector[i]) {
+			Record rc = get_record(diskInstance, i);
+			sum += rc.amount;
 		}
-		starting_block = block->get_next_block_idx();
-		// delete records;
-		cout << "Next up: " << block->get_next_block_idx() << endl;
 	}
-	while(block->get_next_block_idx()!=-1);
-	delete block;
 	return sum;
 }
 
-unsigned int get_start(const string config_file_name){
+void load_configuration(const string config_file_name){
 	ifstream config_file(config_file_name, ios :: in);
 	if(!config_file.is_open()) {
 		cerr << "[ERROR] CONFIG File cannot be opened" << endl;
-		return static_cast<unsigned int>(-1);
+		return;
 	}
 	while(!config_file.eof()) {
 		string command, value;
 		config_file >> command >> value;
-		if(command == "datablock"){
-			return static_cast<unsigned int>(stoi(value));
-		}
+		if(command == "prefix") prefix = value;
+		else if(command == "datablock") datablock_start_idx = static_cast<unsigned int>(stoi(value));
+		else if(command == "numrecords") numrecords = static_cast<unsigned int>(stoi(value));
 	}
+	config_file.close();
 }
 
 int main()
 {
+	Disk diskInstance("CONFIG");
+	load_configuration("CONFIG");
+	
 	vector<bool> query_vector(BF_SIZE, 0);
 	int n, temp;
 	cin>>n;
-	for(int i=0;i<n;++i){
+	for(int i=0;i<n;++i) {
 		cin>>temp;
 		query_vector[temp] = true;
-	}
-	unsigned int starting_block = get_start("CONFIG");
-	long long sum = no_index(starting_block, query_vector);
+	} 
+	long long sum = no_index_query(query_vector, diskInstance);
 	cout << "Final sum was: "<< sum << endl;
+	diskInstance.flush_cache();
 	return 0;
 }

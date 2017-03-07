@@ -44,6 +44,13 @@ bool BitmapBlock::add_bit(const bool& bit)
 	return true;
 }
 
+bool RowIDBitmapBlock::add_rowid(const unsigned int& rowid)
+{
+	if(rowids.size() == blocking_factor) return false;
+	rowids.push_back(rowid);
+	return true;
+}
+
 // bool BitmapBlock::set_bitmap(const vector<bool>& p_bitmap)
 // {
 // 	if(p_bitmap.size() != blocking_factor) return false;
@@ -156,11 +163,30 @@ Block* Disk::read_block(unsigned int block_idx)
 		ret->load(get_block_file(block_idx));
 
 		if(index_vector.size() == cache_size){
+			(*index_vector.begin()).second->serialize(get_block_file((*index_vector.begin()).first));
+			delete (*index_vector.begin()).second;
 			index_vector.erase(index_vector.begin()); 
 		}
 		index_vector[block_idx] = ret;
 		return ret;
 	}
+}
+
+void Disk::write_block(Block* block_ptr, unsigned int block_idx) {
+	if(!valid_block_index(block_idx)) {
+		cerr << "[ERROR] Block Index invalid" << endl;
+		return;
+	}
+	//block_ptr->serialize(get_block_file(block_idx));
+}
+
+void Disk::flush_cache()
+{
+	for(auto it : index_vector) {
+		(it.second)->serialize(get_block_file(it.first));
+		delete it.second;
+	}
+	index_vector.clear();
 }
 
 void RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
@@ -254,15 +280,16 @@ void RowId::insertIntoBitmap(unsigned int bitmap_index, unsigned int data){
 		block->set_next_block_idx(new_addr);
 		this->disk_ref->write_block(static_cast<Block*>(block), add);
 		delete block;
-		block = static_cast<RowIDBitmapBlock*>(this->disk_ref->read_block(new_addr, ROWID_BITMAP_BLOCK));
+		block = new RowIDBitmapBlock;
 		if(block->add_rowid(data)){
 			this->disk_ref->write_block(static_cast<Block*>(block), add);
 			delete block;
 		}
 		else{
+			if(block != nullptr) delete block;
 			cerr << "[ERROR] Fatal error!" << endl;
 		}
-	}			
+	}
 }
 
 void RowId::addRecordToIndex(const Record& r){
@@ -270,7 +297,7 @@ void RowId::addRecordToIndex(const Record& r){
 }
 
 void Bitarray::addRecordToIndex(const Record& r){
-	
+		
 }
 
 void Bitslice::addRecordToIndex(const Record& r){

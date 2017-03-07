@@ -68,6 +68,7 @@ class RecordBlock : public Block {
 		vector<Record> read_records(){
 			return this->records;
 		}
+		Record get_record(const unsigned int& idx) { return records[idx]; }
 };
 
 class BitmapBlock : public Block {
@@ -136,16 +137,9 @@ class Disk
 		string get_block_file(int block_idx) const { return prefix + to_string(block_idx); }
 
 		//Read and Write Blocks
-		void write_block(Block* block_ptr, unsigned int block_idx) {
-			if(!valid_block_index(block_idx)) {
-				cerr << "[ERROR] Block Index invalid" << endl;
-				return;
-			}
-			block_ptr->serialize(get_block_file(block_idx));
-		}
+		void write_block(Block* block_ptr, unsigned int block_idx);
 		Block* read_block(unsigned int block_idx);
-		Block* read_block(unsigned int block_idx, BLOCK_TYPE type);
-		
+		void flush_cache();
 		//Get free block index, block is marked as used now
 		int get_free_block_idx() {
 			if(free_blocks.empty()) return -1;
