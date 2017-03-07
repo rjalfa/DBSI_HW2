@@ -465,14 +465,16 @@ void Bitslice::constructIndex(unsigned int num_records, unsigned int datablock_s
 	unsigned int index;
 	for(unsigned int j = 0; j < BITSLICE_BITS; j ++)
 	{
+
 		vector<bool> bitmap;
 		for(unsigned int i = 0; i < num_records; i ++)
 		{	
-			// if(i % 10000 == 0) cerr << i << " records done!" << endl;
+			if(i % 10000 == 0) cerr << i << " records done!" << endl;
 			Record rc = get_record(*(this->get_disk_ref()), i, datablock_start_idx);
 			bitmap.push_back(this->position_set(rc.amount,j));
 		}
 		index = generate_bitmap(num_records, bitmap, *(this->get_disk_ref()));
+		cerr << j << " bitmap saved start at " << index << endl; 
 		this->setSecondaryEntry(j, index);
 	}
 }

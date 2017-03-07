@@ -26,10 +26,14 @@ int main(){
 	Disk diskInstance("CONFIG");
 	load_configuration("CONFIG");
 
-	RowId row_bitmap;
-	row_bitmap.set_disk_ref(&diskInstance);
-	row_bitmap.initialize_index(diskInstance, unique_values, -1);
-	row_bitmap.constructIndex(numrecords, datablock_start_idx);
+	//RowId row_bitmap;
+	//row_bitmap.set_disk_ref(&diskInstance);
+	//row_bitmap.initialize_index(diskInstance, unique_values, -1);
+	//row_bitmap.constructIndex(numrecords, datablock_start_idx);
+
+	Bitslice bs;
+	bs.set_disk_ref(&diskInstance);
+	bs.constructIndex(numrecords, datablock_start_idx);
 
 	diskInstance.flush_cache();
 	return 0;

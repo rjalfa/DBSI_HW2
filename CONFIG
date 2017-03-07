@@ -4,4 +4,7 @@ datablock 0
 numrecords 2000000
 datablock-end 6666
 rowidblock 6667
-rowidblock-end 6667
+rowidblock-end 9167
+bitsliceblock 9168
+bitslicestride 63
+bitsliceblock-end 9923

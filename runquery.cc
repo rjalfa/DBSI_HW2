@@ -3,10 +3,12 @@
 #define BF_SIZE 2000000
 
 string prefix = "";
-unsigned int datablock_start_idx = -1;
+int datablock_start_idx = -1;
 unsigned int numrecords = 0;
 unsigned int unique_values = 2500;
-unsigned int rowidblock_start_idx = -1;
+int rowidblock_start_idx = -1;
+int bitslice_start_idx = -1;
+int bitslice_stride = 0;
 //unsigned int datablock_start_idx = -1;
 
 /*
@@ -37,6 +39,8 @@ void load_configuration(const string config_file_name){
 		else if(command == "datablock") datablock_start_idx = static_cast<unsigned int>(stoi(value));
 		else if(command == "numrecords") numrecords = static_cast<unsigned int>(stoi(value));
 		else if(command == "rowidblock") rowidblock_start_idx = static_cast<unsigned int>(stoi(value));
+		else if(command == "bitsliceblock") bitslice_start_idx = static_cast<unsigned int>(stoi(value));
+		else if(command == "bitslicestride") bitslice_stride = static_cast<unsigned int>(stoi(value));
 	}
 	config_file.close();
 }
@@ -62,14 +66,14 @@ int main()
 	sum = row_bitmap.sumQueryRecords(query_vector);
 	cout << "Final sum was: "<< sum << endl;
 
-	Bitarray array_bitmap;
-	array_bitmap.initialize_existing_index(diskInstance, unique_values, rowidblock_start_idx);
+	//Bitarray array_bitmap;
+	//array_bitmap.initialize_existing_index(diskInstance, unique_values, rowidblock_start_idx);
 
-	sum = row_bitmap.sumQueryRecords(query_vector);
-	cout << "Final sum was: "<< sum << endl;
+	//sum = row_bitmap.sumQueryRecords(query_vector);
+	//cout << "Final sum was: "<< sum << endl;
 
-	Bitarray bitslice;
-	bitslice.initialize_existing_index(diskInstance, unique_values, rowidblock_start_idx);
+	Bitslice bitslice;
+	bitslice.initialize_existing_index(diskInstance, bitslice_start_idx, bitslice_stride);
 
 	sum = row_bitmap.sumQueryRecords(query_vector);
 	cout << "Final sum was: "<< sum << endl;
