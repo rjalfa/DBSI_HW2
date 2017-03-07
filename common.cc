@@ -138,7 +138,7 @@ void RowIDBitmapBlock::load(const string& filename)
 Block* Disk::read_block(unsigned int block_idx)
 {
 	if(this->index_vector.find(block_idx) != this->index_vector.end()){
-		return this->index_vector[block_idx];
+		return this->index_vector[block_idx].first;
 	}
 	else{
 		//If not a valid block, return null
@@ -166,32 +166,32 @@ Block* Disk::read_block(unsigned int block_idx)
 		ret->load(get_block_file(block_idx));
 
 		if(index_vector.size() == cache_size){
-			(*index_vector.begin()).second->serialize(get_block_file((*index_vector.begin()).first));
-			delete (*index_vector.begin()).second;
+			if((*index_vector.begin()).second.second) (*index_vector.begin()).second.first->serialize(get_block_file((*index_vector.begin()).first));
+			delete (*index_vector.begin()).second.first;
 			index_vector.erase(index_vector.begin()); 
 		}
-		index_vector[block_idx] = ret;
+		index_vector[block_idx] = make_pair(ret,false);
 		return ret;
 	}
 }
 
 void Disk::write_block(Block* block_ptr, unsigned int block_idx) {
-	static int cnt = 0;
+	static unsigned int cnt = 0;
 
 	if(!valid_block_index(block_idx)) {
 		cerr << "[ERROR] Block Index invalid" << endl;
 		return;
 	}
 	if(this->index_vector.find(block_idx) != this->index_vector.end()){
-		this->index_vector[block_idx] = block_ptr;
+		this->index_vector[block_idx] = make_pair(block_ptr,true);
 	}
 	else {
 		if(index_vector.size() == cache_size){
-			(*index_vector.begin()).second->serialize(get_block_file((*index_vector.begin()).first));
-			delete (*index_vector.begin()).second;
+			if((*index_vector.begin()).second.second) (*index_vector.begin()).second.first->serialize(get_block_file((*index_vector.begin()).first));
+			delete (*index_vector.begin()).second.first;
 			index_vector.erase(index_vector.begin()); 
 		}
-		index_vector[block_idx] = block_ptr;
+		index_vector[block_idx] = make_pair(block_ptr, true);
 	}
 	if(cnt >= CACHE_FLUSH_GUARD_VALUE) {
 		flush_cache();
@@ -204,8 +204,8 @@ void Disk::write_block(Block* block_ptr, unsigned int block_idx) {
 void Disk::flush_cache()
 {
 	for(auto it : index_vector) {
-		(it.second)->serialize(get_block_file(it.first));
-		delete it.second;
+		if(it.second.second) (it.second.first)->serialize(get_block_file(it.first));
+		delete it.second.first;
 	}
 	index_vector.clear();
 }
@@ -353,7 +353,7 @@ void RowId::insertIntoBitmap(unsigned int bitmap_index, unsigned int data){
 
 long long RowId::sumQueryRecords(vector<bool> bfr){
 	long long sum = 0;
-	for(unsigned int i=0;i<MAX_VALUE;++i){
+	for(unsigned int i=0;i<=MAX_VALUE;++i){
 		unsigned int add = this->getSecondaryEntry(i);
 		RowIDBitmapBlock* block = nullptr;
 		do

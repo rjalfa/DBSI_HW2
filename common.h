@@ -114,7 +114,7 @@ class Disk
 		string prefix;
 		unsigned int numblocks;
 		queue<unsigned int> free_blocks;
-		unordered_map<unsigned int, Block*> index_vector;
+		unordered_map<unsigned int, pair<Block*,bool> > index_vector;
 		unsigned int cache_size;
 	public:
 		//Parametric Constructor
