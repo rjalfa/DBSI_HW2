@@ -16,7 +16,6 @@ unsigned int generate_table(unsigned int num_records, Disk& diskInstance)
 			blk->set_next_block_idx(new_block_idx);
 			//Write the block
 			diskInstance.write_block(static_cast<Block*>(blk), prev_block_idx);
-			delete blk;
 		}
 		blk = new RecordBlock;
 		while(true)
@@ -41,7 +40,6 @@ unsigned int generate_table(unsigned int num_records, Disk& diskInstance)
 	if(blk != nullptr) {
 		//Write the block
 		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);	
-		delete blk;
 	}
 	return static_cast<unsigned int>(first_block_idx);
 }
@@ -51,9 +49,11 @@ int main()
 	//Start Disk
 	Disk diskInstance("CONFIG");
 	auto idx = generate_table(20'00'000, diskInstance);
+	diskInstance.flush_cache();
 	//Prompt based I/O
 	ofstream of("CONFIG", ios::app);
 	of << "datablock " << idx << endl;
+	of << "numrecords " << 20'00'000 << endl;
 	of.close();
 	return 0;
 }

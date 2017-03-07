@@ -7,6 +7,9 @@ unsigned int datablock_start_idx = -1;
 unsigned int numrecords = 0;
 
 
+/*
+ * No Index Query
+ */
 long long no_index_query(vector<bool> query_vector, Disk& diskInstance){
 	long long sum = 0;
 	for(unsigned int i = 0; i < query_vector.size(); i ++)
