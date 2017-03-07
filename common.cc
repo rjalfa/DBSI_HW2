@@ -378,6 +378,64 @@ long long RowId::sumQueryRecords(vector<bool> bfr){
 	return sum;
 }
 
+long long Bitarray::sumQueryRecords(vector<bool> bfr){
+	long long sum = 0;
+	for(unsigned int i=0;i<MAX_VALUE;++i){
+		long long index = 0;
+		unsigned int add = this->getSecondaryEntry(i);
+		BitmapBlock* block = nullptr;
+		do
+		{
+			if(block!=nullptr) delete block;
+			block = static_cast<BitmapBlock*>(this->disk_ref->read_block(add));
+			vector<bool> bitmap = block->read_bitmap();
+			for(unsigned int j=0;j<bitmap.size();++j){
+				if(bfr[index+j] && bitmap[j]){
+					sum += i;
+				}
+			}
+			//iterate through block data
+			if(block->get_next_block_idx()==-1){
+				break;
+			}
+			else{
+				index += bitmap.size();
+				add = block->get_next_block_idx();
+			}
+		}while(true);
+	}
+	return sum;
+}
+
+long long Bitslice::sumQueryRecords(vector<bool> bfr){
+	long long sum = 0;
+	for(unsigned int i=0;i<BITSLICE_BITS;++i){
+		long long index = 0;
+		unsigned int add = this->getSecondaryEntry(i);
+		BitmapBlock* block = nullptr;
+		do
+		{
+			if(block!=nullptr) delete block;
+			block = static_cast<BitmapBlock*>(this->disk_ref->read_block(add));
+			vector<bool> bitmap = block->read_bitmap();
+			for(unsigned int j=0;j<bitmap.size();++j){
+				if(bfr[index+j] && bitmap[j]){
+					sum += i;
+				}
+			}
+			//iterate through block data
+			if(block->get_next_block_idx()==-1){
+				break;
+			}
+			else{
+				index += bitmap.size();
+				add = block->get_next_block_idx();
+			}
+		}while(true);
+	}
+	return sum;
+}
+
 void RowId::constructIndex(unsigned int num_records, unsigned int datablock_start_idx){
 	for(unsigned int i = 0; i < num_records; i ++)
 	{

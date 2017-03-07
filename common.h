@@ -85,6 +85,9 @@ class BitmapBlock : public Block {
 		bool add_bit(const bool& bit);
 		void serialize(const string& filename);
 		void load(const string& filename);
+		vector<bool> read_bitmap(){
+			return this->bitmap;
+		}
 };
 
 class RowIDBitmapBlock : public Block {
@@ -190,6 +193,7 @@ public:
 	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
 	void constructIndex(unsigned int num_records, unsigned int datablock_start_idx);
 	void initialize_existing_index(Disk& diskInstance, unsigned int rowidblock_start_idx, unsigned int stride);
+	long long sumQueryRecords(vector<bool> bfr);
 };
 
 
@@ -205,6 +209,7 @@ public:
 	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
 	void constructIndex(unsigned int num_records, unsigned int datablock_start_idx);
 	void initialize_existing_index(Disk& diskInstance, unsigned int rowidblock_start_idx, unsigned int stride);
+	long long sumQueryRecords(vector<bool> bfr);
 };
 
 #endif
