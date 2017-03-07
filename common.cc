@@ -37,13 +37,20 @@ bool RecordBlock::add_record(const Record& record)
 	return true;
 }
 
-bool BitmapBlock::set_bitmap(const vector<bool>& p_bitmap)
+bool BitmapBlock::add_bit(const bool& bit)
 {
-	if(p_bitmap.size() != blocking_factor) return false;
-	bitmap.clear();
-	copy(p_bitmap.begin(), p_bitmap.end(), bitmap.begin());
+	if(bitmap.size() == blocking_factor) return false;
+	bitmap.push_back(bit);
 	return true;
 }
+
+// bool BitmapBlock::set_bitmap(const vector<bool>& p_bitmap)
+// {
+// 	if(p_bitmap.size() != blocking_factor) return false;
+// 	bitmap.clear();
+// 	copy(p_bitmap.begin(), p_bitmap.end(), bitmap.begin());
+// 	return true;
+// }
 
 void RecordBlock::serialize(const string& filename)
 {

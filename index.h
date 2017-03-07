@@ -7,6 +7,8 @@
 
 using namespace std;
 
+unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance);
+
 class Index
 {
 protected:
@@ -24,7 +26,8 @@ public:
 };
 
 class Bitmap: public Index {
-
+public:
+	// virtual void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size) = 0;	
 };
 
 class RowId: public Bitmap {
@@ -34,6 +37,8 @@ public:
 };
 
 class Bitarray: public Bitmap {
+	
+public:
 	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
 };
 
@@ -45,7 +50,7 @@ class Bitslice: public Index {
 	}
 	bool generateBitIndex(Disk& diskInstance, int bit_position);
 public:
-	Bitslice() : nbits(12) { };
+	Bitslice() { };
 	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
 };
 
