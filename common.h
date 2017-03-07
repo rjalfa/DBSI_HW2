@@ -62,6 +62,9 @@ class RecordBlock : public Block {
 		bool add_record(const Record& record);
 		void serialize(const string& filename);
 		void load(const string& filename);
+		vector<Record> read_records(){
+			return this->records;
+		}
 };
 
 class BitmapBlock : public Block {
