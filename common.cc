@@ -380,7 +380,7 @@ long long RowId::sumQueryRecords(vector<bool> bfr){
 
 long long Bitarray::sumQueryRecords(vector<bool> bfr){
 	long long sum = 0;
-	for(unsigned int i=0;i<MAX_VALUE;++i){
+	for(unsigned int i=0;i<=MAX_VALUE;++i){
 		long long index = 0;
 		unsigned int add = this->getSecondaryEntry(i);
 		BitmapBlock* block = nullptr;
@@ -447,7 +447,7 @@ void RowId::constructIndex(unsigned int num_records, unsigned int datablock_star
 
 void Bitarray::constructIndex(unsigned int num_records, unsigned int datablock_start_idx){
 	unsigned int index;
-	for(unsigned int j = 0; j < MAX_VALUE; j ++)
+	for(unsigned int j = 0; j <= MAX_VALUE; j ++)
 	{
 		vector<bool> bitmap;
 		for(unsigned int i = 0; i < num_records; i ++)
@@ -457,6 +457,7 @@ void Bitarray::constructIndex(unsigned int num_records, unsigned int datablock_s
 			bitmap.push_back(rc.amount == j);
 		}
 		index = generate_bitmap(num_records, bitmap, *(this->get_disk_ref()));
+		cerr << j << " bitmap saved start at " << index << endl; 
 		this->setSecondaryEntry(j, index);
 	}
 }
@@ -469,7 +470,7 @@ void Bitslice::constructIndex(unsigned int num_records, unsigned int datablock_s
 		vector<bool> bitmap;
 		for(unsigned int i = 0; i < num_records; i ++)
 		{	
-			if(i % 10000 == 0) cerr << i << " records done!" << endl;
+			// if(i % 10000 == 0) cerr << i << " records done!" << endl;
 			Record rc = get_record(*(this->get_disk_ref()), i, datablock_start_idx);
 			bitmap.push_back(this->position_set(rc.amount,j));
 		}

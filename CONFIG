@@ -8,3 +8,6 @@ rowidblock-end 9167
 bitsliceblock 9168
 bitslicestride 63
 bitsliceblock-end 9923
+bitarrayblock 9924
+bitarraystride 63
+bitarrayblock-end 167486

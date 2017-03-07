@@ -31,7 +31,7 @@ int main(){
 	//row_bitmap.initialize_index(diskInstance, unique_values, -1);
 	//row_bitmap.constructIndex(numrecords, datablock_start_idx);
 
-	Bitslice bs;
+	Bitarray bs;
 	bs.set_disk_ref(&diskInstance);
 	bs.constructIndex(numrecords, datablock_start_idx);
 
