@@ -11,6 +11,7 @@ int bitslice_start_idx = -1;
 int bitslice_stride = 0;
 int bitarray_start_idx = -1;
 int bitarray_stride = 0;
+
 //unsigned int datablock_start_idx = -1;
 
 /*
@@ -61,26 +62,30 @@ int main()
 		cin>>temp;
 		query_vector[temp] = true;
 	} 
+	count_accesses = 0;
 	long long sum = no_index_query(query_vector, diskInstance);
-	cout << "Final sum was: "<< sum << endl;
+	cout << "No Index: Final sum was: "<< sum << " and count: "<< count_accesses << endl;
 
+	count_accesses = 0;
 	RowId row_bitmap;
 	row_bitmap.initialize_existing_index(diskInstance, unique_values, rowidblock_start_idx);
 
 	sum = row_bitmap.sumQueryRecords(query_vector);
-	cout << "Final sum was: "<< sum << endl;
+	cout << "RowID Bitmap: Final sum was: "<< sum <<" and count: "<< count_accesses << endl;
 
+	count_accesses = 0;
 	Bitarray array_bitmap;
 	array_bitmap.initialize_existing_index(diskInstance, bitarray_start_idx, bitarray_stride);
 
-	sum = row_bitmap.sumQueryRecords(query_vector);
-	cout << "Final sum was: "<< sum << endl;
+	sum = array_bitmap.sumQueryRecords(query_vector);
+	cout << "Bitarray: Final sum was: "<< sum << " and count: "<< count_accesses << endl;
 
+	count_accesses = 0;
 	Bitslice bitslice;
 	bitslice.initialize_existing_index(diskInstance, bitslice_start_idx, bitslice_stride);
 
-	sum = row_bitmap.sumQueryRecords(query_vector);
-	cout << "Final sum was: "<< sum << endl;
+	sum = bitslice.sumQueryRecords(query_vector);
+	cout << "Bitslice: Final sum was: "<< sum << " and count: "<< count_accesses << endl;
 
 	diskInstance.flush_cache();
 	return 0;

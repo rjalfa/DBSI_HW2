@@ -19,7 +19,7 @@ constexpr unsigned int CACHE_SIZE = 2550;
 constexpr unsigned int MAX_VALUE = 2500;
 constexpr unsigned int BITSLICE_BITS = 12;
 constexpr unsigned int CACHE_FLUSH_GUARD_VALUE = 4000;
-
+extern long long count_accesses;
 enum BLOCK_TYPE { RECORD_BLOCK, BITMAP_BLOCK, ROWID_BITMAP_BLOCK };
 /*
  * Random Generation utilities

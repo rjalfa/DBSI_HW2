@@ -2,6 +2,8 @@
 
 default_random_engine generator;
 
+long long count_accesses = 0;
+
 string generate_random_string(unsigned int length) {
 	//Return empty string if length = 0
 	if(length == 0) return "";
@@ -164,7 +166,7 @@ Block* Disk::read_block(unsigned int block_idx)
 				ret = new RowIDBitmapBlock;break;
 		}
 		ret->load(get_block_file(block_idx));
-
+		count_accesses ++;
 		if(index_vector.size() == cache_size){
 			if((*index_vector.begin()).second.second) (*index_vector.begin()).second.first->serialize(get_block_file((*index_vector.begin()).first));
 			delete (*index_vector.begin()).second.first;
@@ -386,7 +388,7 @@ long long Bitarray::sumQueryRecords(vector<bool> bfr){
 		BitmapBlock* block = nullptr;
 		do
 		{
-			if(block!=nullptr) delete block;
+			// if(block!=nullptr) delete block;
 			block = static_cast<BitmapBlock*>(this->disk_ref->read_block(add));
 			vector<bool> bitmap = block->read_bitmap();
 			for(unsigned int j=0;j<bitmap.size();++j){
@@ -415,12 +417,12 @@ long long Bitslice::sumQueryRecords(vector<bool> bfr){
 		BitmapBlock* block = nullptr;
 		do
 		{
-			if(block!=nullptr) delete block;
+			// if(block!=nullptr) delete block;
 			block = static_cast<BitmapBlock*>(this->disk_ref->read_block(add));
 			vector<bool> bitmap = block->read_bitmap();
 			for(unsigned int j=0;j<bitmap.size();++j){
 				if(bfr[index+j] && bitmap[j]){
-					sum += i;
+					sum += (1ll << i);
 				}
 			}
 			//iterate through block data
@@ -487,12 +489,12 @@ void RowId::initialize_existing_index(Disk& diskInstance, unsigned int num_recor
 
 void Bitarray::initialize_existing_index(Disk& diskInstance, unsigned int rowidblock_start_idx, unsigned int stride) {
 	disk_ref = &diskInstance;
-	for(unsigned int i = 0; i <= MAX_VALUE; i ++ ) setSecondaryEntry(i, rowidblock_start_idx + stride);
+	for(unsigned int i = 0; i <= MAX_VALUE; i ++ ) setSecondaryEntry(i, rowidblock_start_idx + i*stride);
 }
 
 void Bitslice::initialize_existing_index(Disk& diskInstance, unsigned int rowidblock_start_idx, unsigned int stride) {
 	disk_ref = &diskInstance;
-	for(unsigned int i = 0; i <= BITSLICE_BITS; i ++ ) setSecondaryEntry(i, rowidblock_start_idx + stride);
+	for(unsigned int i = 0; i <= BITSLICE_BITS; i ++ ) setSecondaryEntry(i, rowidblock_start_idx + i*stride);
 }
 
 void RowId::addRecordToIndex(const Record& r){
