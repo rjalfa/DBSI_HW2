@@ -136,6 +136,7 @@ class Disk
 			block_ptr->serialize(get_block_file(block_idx));
 		}
 		Block* read_block(unsigned int block_idx);
+		Block* read_block(unsigned int block_idx, BLOCK_TYPE type);
 		
 		//Get free block index, block is marked as used now
 		int get_free_block_idx() {

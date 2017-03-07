@@ -3,8 +3,10 @@
 void RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
 	for(unsigned int i=0;i<num_bitmaps;i++){
 		int index = diskInstance.get_free_block_idx();
-		diskInstance.write_block(static_cast<Block*>(new RowIDBitmapBlock), index);
+		Block* temp = static_cast<Block*>(new RowIDBitmapBlock);
+		diskInstance.write_block(temp, index);
 		this->setSecondaryEntry(i, index);
+		delete temp;
 	}
 }
 
@@ -65,6 +67,52 @@ unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance)
 	return static_cast<unsigned int>(first_block_idx);
 }
 
+void RowId::insertIntoBitmap(unsigned int bitmap_index, unsigned int data){
+	unsigned int add = this->getSecondaryEntry(bitmap_index);
+	RowIDBitmapBlock* block = nullptr;
+	bool found = false;
+	do
+	{
+		if(block!=nullptr) delete block;
+		block = static_cast<RowIDBitmapBlock*>(this->disk_ref->read_block(add));
+		if(block->get_next_block_idx()==-1){
+			found = true;
+		}
+		else{
+			add = block->get_next_block_idx();
+		}
+	}while(!found);
+	if(block->add_rowid(data)){
+		this->disk_ref->write_block(static_cast<Block*>(block), add);
+		delete block;
+	}
+	else{
+		unsigned int new_addr = this->disk_ref->get_free_block_idx();
+		block->set_next_block_idx(new_addr);
+		this->disk_ref->write_block(static_cast<Block*>(block), add);
+		delete block;
+		block = static_cast<RowIDBitmapBlock*>(this->disk_ref->read_block(new_addr, ROWID_BITMAP_BLOCK));
+		if(block->add_rowid(data)){
+			this->disk_ref->write_block(static_cast<Block*>(block), add);
+			delete block;
+		}
+		else{
+			cerr << "[ERROR] Fatal error!" << endl;
+		}
+	}			
+}
+
+void RowId::addRecordToIndex(const Record& r){
+	this->insertIntoBitmap(r.amount, r.id);
+}
+
+void Bitarray::addRecordToIndex(const Record& r){
+	
+}
+
+void Bitslice::addRecordToIndex(const Record& r){
+	
+}
 
 int main(){
 	return 0;
