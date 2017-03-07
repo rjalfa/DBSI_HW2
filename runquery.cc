@@ -62,6 +62,18 @@ int main()
 	sum = row_bitmap.sumQueryRecords(query_vector);
 	cout << "Final sum was: "<< sum << endl;
 
+	Bitarray array_bitmap;
+	array_bitmap.initialize_existing_index(diskInstance, unique_values, rowidblock_start_idx);
+
+	// sum = row_bitmap.sumQueryRecords(query_vector);
+	// cout << "Final sum was: "<< sum << endl;
+
+	Bitarray bitslice;
+	bitslice.initialize_existing_index(diskInstance, unique_values, rowidblock_start_idx);
+
+	// sum = row_bitmap.sumQueryRecords(query_vector);
+	// cout << "Final sum was: "<< sum << endl;
+
 	diskInstance.flush_cache();
 	return 0;
 }
