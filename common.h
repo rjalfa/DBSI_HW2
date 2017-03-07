@@ -8,11 +8,14 @@
 #include <string>
 #include <cassert>
 #include <queue>
+#include <unordered_map>
+#include <map>
 using namespace std;
 
 constexpr int RECORD_BLOCK_FACTOR = 300;
 constexpr int BITMAP_BLOCK_FACTOR = 32000;
 constexpr int ROWID_BLOCK_FACTOR = 1000;
+constexpr unsigned int CACHE_SIZE = 100;
 
 enum BLOCK_TYPE { RECORD_BLOCK, BITMAP_BLOCK, ROWID_BITMAP_BLOCK };
 /*
@@ -100,11 +103,13 @@ class Disk
 	private:
 		string prefix;
 		unsigned int numblocks;
-		queue<unsigned int> free_blocks; 
-
+		queue<unsigned int> free_blocks;
+		unordered_map<unsigned int, Block*> index_vector;
+		unsigned int cache_size;
 	public:
 		//Parametric Constructor
 		Disk(const string config_file_name) {
+			cache_size = CACHE_SIZE;
 			ifstream config_file(config_file_name, ios :: in);
 			if(!config_file.is_open()) {
 				cerr << "[ERROR] CONFIG File cannot be opened" << endl;
@@ -157,6 +162,59 @@ class Disk
 			}
 			else return false;
 		}
+};
+
+unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance);
+
+class Index
+{
+protected:
+	map<unsigned int, int> secondary_index;
+	Disk* disk_ref = nullptr;
+public:
+	int getSecondaryEntry(int a)
+	{
+		return this->secondary_index[a];
+	}
+	void setSecondaryEntry(int a, int x)
+	{
+		this->secondary_index[a] = x;
+	}
+	virtual void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size) = 0;
+	virtual void addRecordToIndex(const Record& r) = 0;
+};
+
+class Bitmap: public Index {
+public:
+	// virtual void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size) = 0;	
+};
+
+class RowId: public Bitmap {
+
+public:
+	void addRecordToIndex(const Record& r);
+	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
+	void insertIntoBitmap(unsigned int bitmap_index, unsigned int data);
+};
+
+class Bitarray: public Bitmap {
+	
+public:
+	void addRecordToIndex(const Record& r);
+	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
+};
+
+
+class Bitslice: public Index {
+	int index_size;
+	bool position_set(int n, int position){
+		return (1&(n>>(position)));
+	}
+	bool generateBitIndex(Disk& diskInstance, int bit_position);
+public:
+	Bitslice() { };
+	void addRecordToIndex(const Record& r);
+	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
 };
 
 #endif
