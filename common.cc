@@ -256,6 +256,13 @@ unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance)
 	return static_cast<unsigned int>(first_block_idx);
 }
 
+Record get_record(Disk& diskInstance, unsigned int i, unsigned int datablock_start_idx)
+{
+	unsigned int addr = datablock_start_idx + i / RECORD_BLOCK_FACTOR;
+	Block* blk = diskInstance.read_block(addr);
+	return (static_cast<RecordBlock*>(blk))->get_record(i % RECORD_BLOCK_FACTOR);
+}
+
 void RowId::insertIntoBitmap(unsigned int bitmap_index, unsigned int data){
 	unsigned int add = this->getSecondaryEntry(bitmap_index);
 	RowIDBitmapBlock* block = nullptr;
@@ -288,6 +295,66 @@ void RowId::insertIntoBitmap(unsigned int bitmap_index, unsigned int data){
 		else{
 			if(block != nullptr) delete block;
 			cerr << "[ERROR] Fatal error!" << endl;
+		}
+	}
+}
+
+long long RowId::sumQueryRecords(vector<bool> bfr){
+	long long sum = 0;
+	for(unsigned int i=0;i<MAX_VALUE;++i){
+		unsigned int add = this->getSecondaryEntry(i);
+		RowIDBitmapBlock* block = nullptr;
+		do
+		{
+			if(block!=nullptr) delete block;
+			block = static_cast<RowIDBitmapBlock*>(this->disk_ref->read_block(add));
+			vector<unsigned int> indices = block->read_rowids();
+			for(unsigned int j=0;j<indices.size();++j){
+				if(bfr[indices[j]]){
+					sum += i;
+				}
+			}
+			//iterate through block data
+			if(block->get_next_block_idx()==-1){
+				break;
+			}
+			else{
+				add = block->get_next_block_idx();
+			}
+		}while(true);
+		cerr << "[ERROR] Fatal error!" << endl;
+	}
+	return sum;
+}
+
+void RowId::constructIndex(unsigned int num_records, unsigned int datablock_start_idx){
+	RowIDBitmapBlock* block = nullptr;
+	for(unsigned int i = 0; i < num_records; i ++)
+	{
+		Record rc = get_record(*(this->get_disk_ref()), i, datablock_start_idx);
+		unsigned int add = this->getSecondaryEntry(rc.amount);
+		block = static_cast<RowIDBitmapBlock*>(this->disk_ref->read_block(add));
+		if(!block->add_rowid(rc.id)){
+			//Block is filled up; allocate new block
+		}
+		if(block->add_rowid(rc.id)){
+			this->disk_ref->write_block(static_cast<Block*>(block), add);
+			delete block;
+		}
+		else{
+			unsigned int new_addr = this->disk_ref->get_free_block_idx();
+			block->set_next_block_idx(new_addr);
+			this->disk_ref->write_block(static_cast<Block*>(block), add);
+			delete block;
+			block = new RowIDBitmapBlock;
+			if(block->add_rowid(rc.id)){
+				this->disk_ref->write_block(static_cast<Block*>(block), add);
+				delete block;
+			}
+			else{
+				if(block != nullptr) delete block;
+				cerr << "[ERROR] Fatal error!" << endl;
+			}
 		}
 	}
 }

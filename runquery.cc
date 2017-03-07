@@ -6,20 +6,13 @@ string prefix = "";
 unsigned int datablock_start_idx = -1;
 unsigned int numrecords = 0;
 
-Record get_record(Disk& diskInstance, unsigned int i)
-{
-	unsigned int addr = datablock_start_idx + i / RECORD_BLOCK_FACTOR;
-	Block* blk = diskInstance.read_block(addr);
-	return (static_cast<RecordBlock*>(blk))->get_record(i % RECORD_BLOCK_FACTOR);
-}
 
 long long no_index_query(vector<bool> query_vector, Disk& diskInstance){
 	long long sum = 0;
-	
 	for(unsigned int i = 0; i < query_vector.size(); i ++)
 	{
 		if(query_vector[i]) {
-			Record rc = get_record(diskInstance, i);
+			Record rc = get_record(diskInstance, i, datablock_start_idx);
 			sum += rc.amount;
 		}
 	}

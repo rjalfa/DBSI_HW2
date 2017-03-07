@@ -16,6 +16,7 @@ constexpr int RECORD_BLOCK_FACTOR = 300;
 constexpr int BITMAP_BLOCK_FACTOR = 32000;
 constexpr int ROWID_BLOCK_FACTOR = 1000;
 constexpr unsigned int CACHE_SIZE = 100;
+constexpr unsigned int MAX_VALUE = 2500;
 
 enum BLOCK_TYPE { RECORD_BLOCK, BITMAP_BLOCK, ROWID_BITMAP_BLOCK };
 /*
@@ -96,6 +97,9 @@ class RowIDBitmapBlock : public Block {
 		bool add_rowid(const unsigned int& rowid);
 		void serialize(const string& filename);
 		void load(const string& filename);
+		vector<unsigned int> read_rowids(){
+			return this->rowids;
+		}
 };
 
 //Disk Handler Class
@@ -159,6 +163,7 @@ class Disk
 };
 
 unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance);
+Record get_record(Disk& diskInstance, unsigned int i, unsigned int datablock_start_idx);
 
 class Index
 {
@@ -176,6 +181,8 @@ public:
 	}
 	virtual void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size) = 0;
 	virtual void addRecordToIndex(const Record& r) = 0;
+	Disk* get_disk_ref(){ return this->disk_ref;}
+	void set_disk_ref(Disk* ref){ this->disk_ref = ref;}
 };
 
 class Bitmap: public Index {
@@ -189,6 +196,8 @@ public:
 	void addRecordToIndex(const Record& r);
 	void initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size);
 	void insertIntoBitmap(unsigned int bitmap_index, unsigned int data);
+	long long sumQueryRecords(vector<bool> bfr);
+	void constructIndex(unsigned int num_records, unsigned int datablock_start_idx);
 };
 
 class Bitarray: public Bitmap {
