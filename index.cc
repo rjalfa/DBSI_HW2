@@ -1,63 +1,95 @@
-#include "common.h"
+#include "index.h"
 
-#include <bits/stdc++.h>
+bool Bitslice::generateBitIndex(Disk& diskInstance, int bit_position){
+	int first_block_idx = -1;
+	int new_block_idx = -1;
+	int prev_block_idx = -1;
+	RowIDBitmapBlock* blk = nullptr;
+	// iterate through all data blocks
+	while(num_records > 0)
+	{
+		//Request a free block
+		new_block_idx = diskInstance.get_free_block_idx();
+		if(first_block_idx == -1) first_block_idx = new_block_idx;
+		if(blk != nullptr) {
+			blk->set_next_block_idx(new_block_idx);
+			//Write the block
+			diskInstance.write_block(static_cast<Block*>(blk), prev_block_idx);
+			delete blk;
+		}
+		blk = new RowIDBitmapBlock;
+		bool added = blk->add_record(r);
+		prev_block_idx = new_block_idx;
+	}
+	if(blk != nullptr) {
+		//Write the block
+		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);	
+		delete blk;
+	}
+	return static_cast<unsigned int>(first_block_idx);
+}
 
-using namespace std;
+bool RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int btimap_size){
+	for(int i=0;i<num_bitmaps;i++){
+		int index = diskInstance.get_free_block_idx();
+		diskInstance.write_block(static_cast<BLock*>(new RowIDBitmapBlock), index);
+		this->setSecondaryEntry(i, index);
+	}
+}
 
-class Index
+bool Bitarray::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int btimap_size){
+	for(int i=0;i<num_bitmaps;i++){
+		unsigned int first_pointer = generate_bitmap(btimap_size, diskInstance);
+		this->setSecondaryEntry(i, first_pointer);
+	}
+}
+
+bool RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int btimap_size){
+	for(int i=0;i<num_bitmaps;i++){
+		unsigned int first_pointer = generate_bitmap(btimap_size, diskInstance);
+		this->setSecondaryEntry(i, first_pointer);
+	}
+}
+
+unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance)
 {
-protected:
-	map<unsigned int, string> secondary_index;
-public:
-	bool isInIndex(int a){
-		if(this->secondary_index.find(a) == this->secondary_index.end()){
-			return false;
+	unsigned int counter = 0;
+	int first_block_idx = -1;
+	int new_block_idx = -1;
+	int prev_block_idx = -1;
+	BitmapBlock* blk = nullptr;
+	while(num_records > 0)
+	{
+		//Request a free block
+		new_block_idx = diskInstance.get_free_block_idx();
+		if(first_block_idx == -1) first_block_idx = new_block_idx;
+		if(blk != nullptr) {
+			blk->set_next_block_idx(new_block_idx);
+			//Write the block
+			diskInstance.write_block(static_cast<Block*>(blk), prev_block_idx);
+			delete blk;
 		}
-		return true;
-	}
-	string getSecondaryEntry(int a)
-	{
-		return this->secondary_index[a];
-	}
-	void setSecondaryEntry(int a, string x)
-	{
-		this->secondary_index[a] = x;
-	}
-};
-
-class Bitmap: public Index {
-
-};
-
-class RowId: public Bitmap {
-
-public:
-
-};
-
-class Bitarray: public Bitmap {
-
-};
-
-
-class Bitslice: public Index {
-	int index_size;
-	public:
-		Bitslice() : nbits(12) { };
-		String bitsliceIndex(int a){
-			ostringstream os;
-			os << setbase(2) << a;
-			string basic = os.str();
-			int extra_zeros=this->index_size-basic.length();
-			os.flush();
-			while(extra_zeros--){
-				os << 0;
+		blk = new BitmapBlock;
+		while(true)
+		{
+			//Generate a random record
+			bool bit = false;
+			bool added = blk->add_bit(r);
+			if(added) {
+				num_records --;
+				if(num_records == 0) break;
 			}
-			string s = os.str() + basic;
-			return s;
+			else {
+				counter --;
+				break;
+			}
 		}
-		bool createIndex(RowIDBitmapBlock* starting_block){
-
-		}
-
-};
+		prev_block_idx = new_block_idx;
+	}
+	if(blk != nullptr) {
+		//Write the block
+		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);	
+		delete blk;
+	}
+	return static_cast<unsigned int>(first_block_idx);
+}

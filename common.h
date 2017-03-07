@@ -15,9 +15,6 @@ constexpr int BITMAP_BLOCK_FACTOR = 32000;
 constexpr int ROWID_BLOCK_FACTOR = 1000;
 
 enum BLOCK_TYPE { RECORD_BLOCK, BITMAP_BLOCK, ROWID_BITMAP_BLOCK };
-
-const int data_blocking_factor = 300;
-const string disk_prefix = "data/block";
 /*
  * Random Generation utilities
  */
@@ -75,7 +72,7 @@ class BitmapBlock : public Block {
 			Block::type = BITMAP_BLOCK;
 			Block::blocking_factor = BITMAP_BLOCK_FACTOR;
 		}
-		bool set_bitmap(const vector<bool>& bitarray);
+		bool add_bit(const bool& bit);
 		void serialize(const string& filename);
 		void load(const string& filename);
 };
