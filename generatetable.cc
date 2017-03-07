@@ -1,6 +1,6 @@
 #include "common.h"
-
-unsigned int generate_table(unsigned int num_records, Disk& diskInstance)
+#include <utility>
+pair<unsigned int,unsigned int> generate_table(unsigned int num_records, Disk& diskInstance)
 {
 	unsigned int counter = 0;
 	int first_block_idx = -1;
@@ -39,9 +39,10 @@ unsigned int generate_table(unsigned int num_records, Disk& diskInstance)
 	}
 	if(blk != nullptr) {
 		//Write the block
+
 		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);	
 	}
-	return static_cast<unsigned int>(first_block_idx);
+	return make_pair(static_cast<unsigned int>(first_block_idx),static_cast<unsigned int>(new_block_idx)) ;
 }
 
 int main()
@@ -52,8 +53,9 @@ int main()
 	diskInstance.flush_cache();
 	//Prompt based I/O
 	ofstream of("CONFIG", ios::app);
-	of << "datablock " << idx << endl;
+	of << "datablock " << idx.first << endl;
 	of << "numrecords " << 20'00'000 << endl;
+	of << "datablock-end " << idx.second << endl;
 	of.close();
 	return 0;
 }

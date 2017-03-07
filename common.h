@@ -15,7 +15,7 @@ using namespace std;
 constexpr int RECORD_BLOCK_FACTOR = 300;
 constexpr int BITMAP_BLOCK_FACTOR = 32000;
 constexpr int ROWID_BLOCK_FACTOR = 1000;
-constexpr unsigned int CACHE_SIZE = 100;
+constexpr unsigned int CACHE_SIZE = 2500;
 constexpr unsigned int MAX_VALUE = 2500;
 
 enum BLOCK_TYPE { RECORD_BLOCK, BITMAP_BLOCK, ROWID_BITMAP_BLOCK };
@@ -113,27 +113,7 @@ class Disk
 		unsigned int cache_size;
 	public:
 		//Parametric Constructor
-		Disk(const string config_file_name) {
-			cache_size = CACHE_SIZE;
-			ifstream config_file(config_file_name, ios :: in);
-			if(!config_file.is_open()) {
-				cerr << "[ERROR] CONFIG File cannot be opened" << endl;
-				return;
-			}
-
-			//Read key-value pairs from CONFIG and set accordingly
-			while(!config_file.eof()) {
-				string command, value;
-				config_file >> command >> value;
-				if(command == "prefix") prefix = value;
-				else if(command == "numblocks") numblocks = static_cast<unsigned int>(stoi(value));
-			}
-
-			config_file.close();
-
-			//Assuming empty blocks
-			for(unsigned int i = 0; i < numblocks; i ++) free_blocks.push(i);
-		}
+		Disk(const string config_file_name);
 		
 		//Checks if record is a valid 
 		bool valid_block_index(int block_idx) { return  block_idx >= 0 && static_cast<unsigned int>(block_idx) < numblocks; }

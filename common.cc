@@ -93,7 +93,10 @@ void RecordBlock::load(const string& filename)
 	
 	int temp, n;
 	in >> temp >> next_block_idx >> n;
-	assert(temp == type);
+	if(!(temp == type)){
+		cerr << filename << endl;
+		assert(0);
+	}
 	for(int i = 0; i < n; i ++)
 	{
 		Record r;
@@ -200,8 +203,34 @@ void Disk::flush_cache()
 	index_vector.clear();
 }
 
+Disk::Disk(const string config_file_name) {
+	cache_size = CACHE_SIZE;
+	ifstream config_file(config_file_name, ios :: in);
+	if(!config_file.is_open()) {
+		cerr << "[ERROR] CONFIG File cannot be opened" << endl;
+		return;
+	}
+	int l = -1, r = -1;
+	//Read key-value pairs from CONFIG and set accordingly
+	while(!config_file.eof()) {
+		string command, value;
+		config_file >> command >> value;
+		// cerr << "COMMAND: " << command << " " << value << endl;
+		if(command == "prefix") prefix = value;
+		else if(command == "numblocks") numblocks = static_cast<unsigned int>(stoi(value));
+		else if(command == "datablock") l = static_cast<int>(stoi(value));
+		else if(command == "datablock-end") r = static_cast<int>(stoi(value));
+	}
+	// cout << l << " " << r << endl;
+	// if(l != -1 && r != -1) cout << "[INFO] Blocks in use during initialization : " << l << " to " << r << endl; 
+	config_file.close();
+
+	//Assuming empty blocks
+	for(unsigned int i = 0; i < numblocks; i ++) if(!(l != -1 && r != -1 && l <= static_cast<int>(i) && r >= static_cast<int>(i))) free_blocks.push(i);
+}
+
 void RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
-	for(unsigned int i=0;i<num_bitmaps;i++){
+	for(unsigned int i=0;i<=num_bitmaps;i++){
 		int index = diskInstance.get_free_block_idx();
 		Block* temp = static_cast<Block*>(new RowIDBitmapBlock);
 		diskInstance.write_block(temp, index);
@@ -211,14 +240,14 @@ void RowId::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsig
 }
 
 void Bitarray::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
-	for(unsigned int i=0;i<num_bitmaps;i++){
+	for(unsigned int i=0;i<=num_bitmaps;i++){
 		unsigned int first_pointer = generate_bitmap(bitmap_size, diskInstance);
 		this->setSecondaryEntry(i, first_pointer);
 	}
 }
 
 void Bitslice::initialize_index(Disk& diskInstance, unsigned int num_bitmaps, unsigned int bitmap_size){
-	for(unsigned int i=0;i<num_bitmaps;i++){
+	for(unsigned int i=0;i<=num_bitmaps;i++){
 		unsigned int first_pointer = generate_bitmap(bitmap_size, diskInstance);
 		this->setSecondaryEntry(i, first_pointer);
 	}
@@ -240,7 +269,7 @@ unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance)
 			blk->set_next_block_idx(new_block_idx);
 			//Write the block
 			diskInstance.write_block(static_cast<Block*>(blk), prev_block_idx);
-			delete blk;
+			// delete blk;
 		}
 		blk = new BitmapBlock;
 		while(true)
@@ -262,7 +291,7 @@ unsigned int generate_bitmap(unsigned int num_records, Disk& diskInstance)
 	if(blk != nullptr) {
 		//Write the block
 		diskInstance.write_block(static_cast<Block*>(blk), new_block_idx);	
-		delete blk;
+		// delete blk;
 	}
 	return static_cast<unsigned int>(first_block_idx);
 }
@@ -271,6 +300,10 @@ Record get_record(Disk& diskInstance, unsigned int i, unsigned int datablock_sta
 {
 	unsigned int addr = datablock_start_idx + i / RECORD_BLOCK_FACTOR;
 	Block* blk = diskInstance.read_block(addr);
+	if(!(blk->get_block_type() == RECORD_BLOCK)) {
+		cerr << i << " " << datablock_start_idx << " " << addr << endl;
+		assert(false);
+	}
 	return (static_cast<RecordBlock*>(blk))->get_record(i % RECORD_BLOCK_FACTOR);
 }
 
@@ -280,7 +313,7 @@ void RowId::insertIntoBitmap(unsigned int bitmap_index, unsigned int data){
 	bool found = false;
 	do
 	{
-		if(block!=nullptr) delete block;
+		//if(block!=nullptr) delete block;
 		block = static_cast<RowIDBitmapBlock*>(this->disk_ref->read_block(add));
 		if(block->get_next_block_idx()==-1){
 			found = true;
@@ -304,7 +337,7 @@ void RowId::insertIntoBitmap(unsigned int bitmap_index, unsigned int data){
 			// delete block;
 		}
 		else{
-			if(block != nullptr) delete block;
+			//if(block != nullptr) delete block;
 			cerr << "[ERROR] Fatal error!" << endl;
 		}
 	}
@@ -341,6 +374,7 @@ long long RowId::sumQueryRecords(vector<bool> bfr){
 void RowId::constructIndex(unsigned int num_records, unsigned int datablock_start_idx){
 	for(unsigned int i = 0; i < num_records; i ++)
 	{
+		if(i % 10000 == 0) cerr << i << " records done!" << endl;
 		Record rc = get_record(*(this->get_disk_ref()), i, datablock_start_idx);
 		this->addRecordToIndex(rc);
 	}

@@ -51,15 +51,11 @@ int main()
 		cin>>temp;
 		query_vector[temp] = true;
 	} 
-	// long long sum = no_index_query(query_vector, diskInstance);
-	// cout << "Final sum was: "<< sum << endl;
+	long long sum = no_index_query(query_vector, diskInstance);
+	cout << "Final sum was: "<< sum << endl;
 
-	RowId row_bitmap;
-	row_bitmap.set_disk_ref(&diskInstance);
-	row_bitmap.initialize_index(diskInstance, unique_values, -1);
-	row_bitmap.constructIndex(numrecords, datablock_start_idx);
 	
-	long long sum = row_bitmap.sumQueryRecords(query_vector);
+	//long long sum = row_bitmap.sumQueryRecords(query_vector);
 	cout << "Final sum was: "<< sum << endl;
 
 	diskInstance.flush_cache();

@@ -2,3 +2,4 @@ prefix data/block
 numblocks 340000
 datablock 0
 numrecords 2000000
+datablock-end 6666
